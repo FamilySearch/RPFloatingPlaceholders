@@ -71,7 +71,7 @@
 - (void)awakeFromNib
 {
     [super awakeFromNib];
-    
+
     // Remember to set the placeholder text via User Defined Runtime
     // Attributes in Interface Builder for the placeholder property to be
     // automatically set here.
@@ -79,10 +79,10 @@
     // Example: http://i.imgur.com/Oq1uFt0.png
     //
     //NSLog(@"Placeholder was set in IB to: %@", self.placeholder);
-    
+
     // This must be done in awakeFromNib since global tint color isn't set by the time initWithCoder: is called
     [self setupDefaultColorStates];
-    
+
     // Ensures that the placeholder & text are set through our custom setters
     // when loaded from a nib/storyboard.
     self.placeholder = self.placeholder;
@@ -121,9 +121,9 @@
 - (void)setPlaceholder:(NSString *)aPlaceholder
 {
     if ([_placeholder isEqualToString:aPlaceholder]) return;
-    
+
     _placeholder = aPlaceholder;
-    
+
     self.floatingLabel.text = _placeholder;
     [self adjustFramesForNewPlaceholder];
 }
@@ -145,25 +145,25 @@
                                                  name:UITextViewTextDidEndEditingNotification object:self];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textViewTextDidChange:)
                                                  name:UITextViewTextDidChangeNotification object:self];
-    
+
     // Forces drawRect to be called when the bounds change
     self.contentMode = UIViewContentModeRedraw;
 
     // Set the default animation direction
     self.animationDirection = RPFloatingPlaceholderAnimateUpward;
-    
+
     // Create the floating label instance and add it to the text view
     self.floatingLabel = [[UILabel alloc] init];
     self.floatingLabel.font = [UIFont boldSystemFontOfSize:11.f];
     self.floatingLabel.textAlignment = self.textAlignment;
     self.floatingLabel.backgroundColor = [UIColor clearColor];
     self.floatingLabel.alpha = 0.f;
-    
+
     if ([self respondsToSelector:@selector(textContainerInset)]) {
         // Change content inset to decrease margin between floating label and
         // text view text
         self.contentInset = UIEdgeInsetsMake(-10.f, 0.f, 0.f, 0.f);
-    
+
         // Fixes a vertical alignment issue when setting text at runtime
         self.textContainerInset = UIEdgeInsetsMake(10.f, 0.f, 0.f, 0.f);
     } else {
@@ -171,10 +171,10 @@
         // floating text view text
         self.contentInset = UIEdgeInsetsMake(-8.f, -3.f, 0.f, 0.f);
     }  // iOS 6
-    
+
     // Cache the original text view frame
     self.originalTextViewFrame = self.frame;
-    
+
     // Set the background to a clear color
     self.backgroundColor = [UIColor clearColor];
 }
@@ -190,7 +190,7 @@
     }
     self.floatingLabelActiveTextColor = self.floatingLabelActiveTextColor ?: defaultActiveColor;
     self.floatingLabelInactiveTextColor = self.floatingLabelInactiveTextColor ?: [UIColor colorWithWhite:0.7f alpha:1.f];
-    
+
     self.floatingLabel.textColor = self.floatingLabelActiveTextColor;
 }
 
@@ -199,7 +199,7 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     // Check if we need to redraw for pre-existing text
     if (![self isFirstResponder]) {
         [self checkForExistingText];
@@ -209,18 +209,18 @@
 - (void)drawRect:(CGRect)aRect
 {
     [super drawRect:aRect];
-    
+
     // Check if we should draw the placeholder string.
     // Use RGB values found via Photoshop for placeholder color #c7c7cd.
     if (self.shouldDrawPlaceholder) {
         UIColor *placeholderGray = self.defaultPlaceholderColor ?: [UIColor colorWithRed:199/255.f green:199/255.f blue:205/255.f alpha:1.f];
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         [paragraphStyle setAlignment: self.textAlignment];
-        
+
         NSDictionary *placeholderAttributes = @{NSFontAttributeName : self.font,
                                                 NSForegroundColorAttributeName : placeholderGray,
                                                 NSParagraphStyleAttributeName : paragraphStyle};
-        
+
         if ([self respondsToSelector:@selector(tintColor)]) {
             // Inset the placeholder by the same 5px on both sides so that it works in right-to-left languages too
             CGRect placeholderFrame = CGRectMake(5.f, 10.f, self.frame.size.width - 10.f, self.frame.size.height - 20.f);
@@ -255,10 +255,10 @@
     if (self.floatingLabel.superview != self.superview) {
         [self.superview addSubview:self.floatingLabel];
     }
-    
+
     // Flags the view to redraw
     [self setNeedsDisplay];
-    
+
     if (isAnimated) {
         UIViewAnimationOptions options = UIViewAnimationOptionBeginFromCurrentState|UIViewAnimationOptionCurveEaseOut;
         [UIView animateWithDuration:0.2f delay:0.f options:options animations:^{
@@ -308,16 +308,21 @@
 - (void)adjustFramesForNewPlaceholder
 {
     [self.floatingLabel sizeToFit];
-    
+
+    //NOTE: This is a hack to get the placeholder label to slide into correct place.  As of iOS 10, the size of the textfield became 1000x1000 at
+    //NOTE: the time the RPFloatingPlaceholderTextField.originalTextFieldFrame was computed and cached. This call will allow that value to update
+    //NOTE: based on size changes to the textfield.
+    self.originalTextViewFrame = self.frame;
+
     CGFloat offset = ceil(self.floatingLabel.font.lineHeight);
-    
+
     self.originalFloatingLabelFrame = CGRectMake(self.originalTextViewFrame.origin.x + 5.f, self.originalTextViewFrame.origin.y,
                                                  self.originalTextViewFrame.size.width - 10.f, self.floatingLabel.frame.size.height);
     self.floatingLabel.frame = self.originalFloatingLabelFrame;
-    
+
     self.offsetFloatingLabelFrame = CGRectMake(self.originalFloatingLabelFrame.origin.x, self.originalFloatingLabelFrame.origin.y - offset,
                                            self.originalFloatingLabelFrame.size.width, self.originalFloatingLabelFrame.size.height);
-    
+
     self.offsetTextViewFrame = CGRectMake(self.originalTextViewFrame.origin.x, self.originalTextViewFrame.origin.y + offset,
                                       self.originalTextViewFrame.size.width, self.originalTextViewFrame.size.height - offset);
 }
@@ -354,7 +359,7 @@
 {
     BOOL previousShouldDrawPlaceholderValue = self.shouldDrawPlaceholder;
     self.shouldDrawPlaceholder = !self.hasText;
-    
+
     // Only redraw if self.shouldDrawPlaceholder value was changed
     if (previousShouldDrawPlaceholderValue != self.shouldDrawPlaceholder) {
         if (self.shouldDrawPlaceholder) {

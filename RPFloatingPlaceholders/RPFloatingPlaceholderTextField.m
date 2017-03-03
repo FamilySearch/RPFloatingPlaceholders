@@ -65,10 +65,10 @@
 - (void)awakeFromNib
 {
     [super awakeFromNib];
-    
+
     // This must be done in awakeFromNib since global tint color isn't set by the time initWithCoder: is called
     [self setupDefaultColorStates];
-    
+
     // Ensures that the placeholder & text are set through our custom setters
     // when loaded from a nib/storyboard.
     self.placeholder = self.placeholder;
@@ -107,16 +107,16 @@
 - (void)setPlaceholder:(NSString *)aPlaceholder
 {
     if ([self.cachedPlaceholder isEqualToString:aPlaceholder]) return;
-    
+
     // We draw the placeholder ourselves so we can control when it is shown
     // during the animations
     [super setPlaceholder:nil];
-    
+
     self.cachedPlaceholder = aPlaceholder;
-    
+
     self.floatingLabel.text = self.cachedPlaceholder;
     [self adjustFramesForNewPlaceholder];
-    
+
     // Flags the view to redraw
     [self setNeedsDisplay];
 }
@@ -144,25 +144,25 @@
                                                  name:UITextFieldTextDidEndEditingNotification object:self];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textFieldTextDidChange:)
                                                  name:UITextFieldTextDidChangeNotification object:self];
-    
+
     // Forces drawRect to be called when the bounds change
     self.contentMode = UIViewContentModeRedraw;
 
     // Set the default animation direction
     self.animationDirection = RPFloatingPlaceholderAnimateUpward;
-    
+
     // Create the floating label instance and add it to the view
     self.floatingLabel = [[UILabel alloc] init];
     self.floatingLabel.font = [UIFont boldSystemFontOfSize:11.f];
     self.floatingLabel.textAlignment = self.textAlignment;
     self.floatingLabel.backgroundColor = [UIColor clearColor];
     self.floatingLabel.alpha = 1.f;
-    
+
     // Adjust the top margin of the text field and then cache the original
     // view frame
     self.originalTextFieldFrame = UIEdgeInsetsInsetRect(self.frame, UIEdgeInsetsMake(5.f, 0.f, 2.f, 0.f));
     self.frame = self.originalTextFieldFrame;
-    
+
     // Set the background to a clear color
     self.backgroundColor = [UIColor clearColor];
 }
@@ -178,7 +178,7 @@
     }
     self.floatingLabelActiveTextColor = self.floatingLabelActiveTextColor ?: defaultActiveColor;
     self.floatingLabelInactiveTextColor = self.floatingLabelInactiveTextColor ?: [UIColor colorWithWhite:0.7f alpha:1.f];
-    
+
     self.floatingLabel.textColor = self.floatingLabelActiveTextColor;
 }
 
@@ -187,7 +187,7 @@
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     // Check if we need to redraw for pre-existing text
     if (![self isFirstResponder]) {
         [self checkForExistingText];
@@ -197,7 +197,7 @@
 - (void)drawRect:(CGRect)aRect
 {
     [super drawRect:aRect];
-    
+
     // Check if we should draw the placeholder string.
     // Use RGB values found via Photoshop for placeholder color #c7c7cd.
     if (self.shouldDrawPlaceholder) {
@@ -206,21 +206,21 @@
         CGRect placeholderFrame = CGRectMake(5.f, floorf((self.frame.size.height - self.font.lineHeight) / 2.f), self.frame.size.width - 10, self.frame.size.height);
         NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
         [paragraphStyle setAlignment: self.textAlignment];
-        
+
         NSDictionary *placeholderAttributes = @{NSFontAttributeName : self.font,
                                                 NSForegroundColorAttributeName : placeholderGray,
                                                 NSParagraphStyleAttributeName : paragraphStyle};
-        
+
         if ([self respondsToSelector:@selector(tintColor)]) {
             [self.cachedPlaceholder drawInRect:placeholderFrame
                                 withAttributes:placeholderAttributes];
-            
+
         } else {
             NSAttributedString *attributedPlaceholder = [[NSAttributedString alloc] initWithString:self.cachedPlaceholder
                                                                                         attributes:placeholderAttributes];
             [attributedPlaceholder drawInRect:placeholderFrame];
         } // iOS 6
-        
+
     }
 }
 
@@ -241,10 +241,10 @@
     if (self.floatingLabel.superview != self.superview) {
         [self.superview addSubview:self.floatingLabel];
     }
-    
+
     // Flags the view to redraw
     [self setNeedsDisplay];
-    
+
     if (isAnimated) {
         UIViewAnimationOptions options = UIViewAnimationOptionBeginFromCurrentState|UIViewAnimationOptionCurveEaseOut;
         [UIView animateWithDuration:0.2f delay:0.f options:options animations:^{
@@ -294,16 +294,21 @@
 - (void)adjustFramesForNewPlaceholder
 {
     [self.floatingLabel sizeToFit];
-    
+
+    //NOTE: This is a hack to get the placeholder label to slide into correct place.  As of iOS 10, the size of the textfield became 1000x1000 at
+    //NOTE: the time the RPFloatingPlaceholderTextField.originalTextFieldFrame was computed and cached. This call will allow that value to update
+    //NOTE: based on size changes to the textfield.
+    self.originalTextFieldFrame = self.frame;
+
     CGFloat offset = ceil(self.floatingLabel.font.lineHeight);
-    
+
     self.originalFloatingLabelFrame = CGRectMake(self.originalTextFieldFrame.origin.x + 5.f, self.originalTextFieldFrame.origin.y,
                                                  self.originalTextFieldFrame.size.width - 10.f, self.floatingLabel.frame.size.height);
     self.floatingLabel.frame = self.originalFloatingLabelFrame;
-    
+
     self.offsetFloatingLabelFrame = CGRectMake(self.originalFloatingLabelFrame.origin.x, self.originalFloatingLabelFrame.origin.y - offset,
                                                self.originalFloatingLabelFrame.size.width, self.originalFloatingLabelFrame.size.height);
-    
+
     self.offsetTextFieldFrame = CGRectMake(self.originalTextFieldFrame.origin.x, self.originalTextFieldFrame.origin.y + offset,
                                            self.originalTextFieldFrame.size.width, self.originalTextFieldFrame.size.height);
 }
@@ -352,7 +357,7 @@
 {
     BOOL previousShouldDrawPlaceholderValue = self.shouldDrawPlaceholder;
     self.shouldDrawPlaceholder = !self.hasText;
-    
+
     // Only redraw if self.shouldDrawPlaceholder value was changed
     if (previousShouldDrawPlaceholderValue != self.shouldDrawPlaceholder) {
         if (self.shouldDrawPlaceholder) {
